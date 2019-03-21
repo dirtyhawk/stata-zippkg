@@ -21,6 +21,9 @@
 *! Daniel Bela (daniel.bela@lifbi.de), Leibniz Institute for Educational Trajectories (LIfBi), Germany
 *! version 0.1 21 Mary 2019 - initialized development version release
 program define zippkg , nclass
+	version 12
+	syntax anything(everything equalok id="package specification" name=pkgspec) ///
+		[ , FLat single SAVing(string) replace Verbose ]
 	*! TODO
 end
 // EOF
