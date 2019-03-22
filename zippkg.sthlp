@@ -71,7 +71,7 @@ file{p_end}
 {synopt:{opt fl:at}}requests that the archive file(s) created should not
 contain a directory structure{p_end}
 {synopt:{opt s:ingle}}instead of creating a joint archive file for all packages
-requested, create a single archive file for each package{p_end}
+requested, create a single archive file for each {it:pkglist}{p_end}
 {synopt:{opt sav:ing}{bf:(}{it:{help filename}}{bf:)}}save output archive as
 {it:{help filename}}; if {it:filename} is specified without a file extension,
 {input:.zip} is assumed{p_end}
@@ -170,11 +170,12 @@ resulting archive file). It will be passed through to
 {phang}{opt saving(filename)} requests the archive file created to be named
 {it:filename}. If {it:filename} is specified without a file extension,
 {input:.zip} is assumed.{break}If the option is omitted (and the {cmd:zippkg}
-option {opt single} is not specified), {input:"./packages.zip"} will be used as
-the default. This will create a file named {bf:packages.zip} in the current
+option {opt single} is not specified), {input:"./zippkg.zip"} will be used as
+the default. This will create a file named {bf:zippkg.zip} in the current
 working directory of Stata.{break}If the option is omitted and option
-{opt single} {it:is} specified, the default is to create archives named after
-each package in the Stata's working directory.{break} Options {opt single} and
+{opt single} {it:is} specified, the default is to create archives named
+{bf:zippkg{it:#}.zip} in the Stata's working directory, where {it:#} denotes a
+running integer.{break} Options {opt single} and
 {opt saving(filename)} are mutually exclusive as {cmd:zippkg} options, with
 {opt single} taking precedence if both are specified.{p_end}
 
@@ -192,11 +193,12 @@ directory of the archive(s).{p_end}
 with an error message.{p_end}
 
 {phang}{opt single} requests that single archive files will be created for each
-package downloaded, instead of a joint archive file for all packages. Each of
-the single archive files will be named {input:{it:packagename}.zip}, and saved
-to Stata's current working directory.{break}This option literally is a shortcut
-to manually specifying {opt saving(packagename.zip)} in each {it:pkgspec}
-separately.{break}Options {opt single} and {opt saving(filename)} are mutually
+{it:pkglist} downloaded, instead of a joint archive file for all packages. Each of
+the single archive files will be named {input:zippkg{it:#}.zip}, and saved
+to Stata's current working directory. In the archive name, {it:#} denotes a
+running integer for the {it:pkglist}{break}This option literally is a shortcut
+to manually specifying {input:saving(zippkg{it:#}.zip)} in each {it:pkgspec}
+manually.{break}Options {opt single} and {opt saving(filename)} are mutually
 exclusive as {cmd:zippkg} options, with {opt single} taking precedence if both
 are specified.{p_end}
 

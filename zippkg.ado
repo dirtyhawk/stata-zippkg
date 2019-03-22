@@ -21,48 +21,97 @@
 *! Daniel Bela (daniel.bela@lifbi.de), Leibniz Institute for Educational Trajectories (LIfBi), Germany
 *! version 0.1 21 Mary 2019 - initialized development version release
 program define zippkg , nclass
+	// version requirements (and string functions dependent on Stata version)
 	version 12
+	if (_caller()<14) {
+		local substr_fcn substr
+		local strpos_fcn strpos
+		local word_fcn word
+	}
+	else {
+		local substr_fcn usubstr
+		local strpos_fcn ustrpos
+		local word_fcn ustrword
+	}
+	// save user's PLUS dir setting
+	local oldplusdir `c(sysdir_plus)'
 	// convert input syntax from ||-separator notation to ()-binding notation
-	while (regexm(`"`0'"',"\|\|")) {
-		/*
-		if (_caller()>=14) {
-		
+	local pipepos=`strpos_fcn'(`"`macval(0)'"',`"||"')
+	if (`pipepos'!=0) {
+		local zero : copy local 0
+		local 0
+		while (`pipepos'!=0) {
+			local before=`substr_fcn'(`"`macval(zero)'"',1,`pipepos'-1)
+			local zero=`substr_fcn'(`"`macval(zero)'"',`pipepos'+2,.)
+			local pipepos=`strpos_fcn'(`"`macval(zero)'"',`"||"')
+			local nextpart=cond(`substr_fcn'(`word_fcn'(`"`macval(before)'"',1),1,1)==`","',`"`macval(before)'"',`"(`macval(before)')"')
+			local 0 `macval(0)' `macval(nextpart)'
+			if (`pipepos'==0) {
+				local nextpart=cond(`substr_fcn'(`word_fcn'(`"`macval(zero)'"',1),1,1)==`","',`"`macval(zero)'"',`"(`macval(zero)')"')
+				local 0 `macval(0)' `macval(nextpart)'
+			}
 		}
-		else {
-		*/
-			local 0="("+regexr(`"`0'"',`"\|\|"',`")("')+")"
-		* }
 	}
 	// parse syntax
 	syntax anything(everything equalok id="package specification" name=pkgspecs) ///
-		[ , FLat single SAVing(string) replace Verbose noTRACKfile ]
+		[ , FLat single SAVing(string asis) replace Verbose noTRACKfile From(string) all ]
 	// parse global options, set defaults
-	foreach global_opt in flat saving replace trackfile {
+	foreach global_opt in flat saving replace trackfile from all {
 		if (!missing(`"``global_opt''"')) local glob_`global_opt' ``global_opt''
 	}
-	if (missing(`"`glob_saving'"')) local glob_saving `"./packages.zip"'
-	if (!missing(`"`single'"')) local glob_saving ./\`pkgname'.zip
-	// create temporary directory
-	_create_tempsubdir `"`c(tmpdir)'"'
-	local tmppath `r(tempdirfullpath)'
-	
+	if (missing(`"`glob_saving'"')) local glob_saving `"./zippkg.zip"'
+	if (!missing(`"`single'"')) local glob_saving ./zippkg\`speccounter'.zip
+	if (missing(`"`glob_from'"')) local glob_from `"SSC"'
+	// parse pkgspecs
 	local speccounter 0
-	while (!missing(`"`pkgspecs'"')) {
+	local targetarchivecounter 0
+	if (`strpos_fcn'(`"`macval(pkgspecs)'"',`"("')==0) local pkgspecs (`macval(pkgspecs)')
+	while (!missing(`"`macval(pkgspecs)'"')) {
 		gettoken pkgspec`++speccounter' pkgspecs : pkgspecs , match(parens) bind quotes
-		if (`"`pkgspec`speccounter''"'=="||") {
-			local -- speccounter
-			continue
+		local 0 `pkgspec`speccounter''
+		syntax namelist(min=1 name=pkglist id="package list") [ , FLat SAVing(string asis) replace noTRACKfile From(string) all ]
+		foreach local_opt in flat saving replace trackfile from all {
+			if (missing(`"``local_opt''"')) local pkgspec`speccounter'_`local_opt' : copy local glob_`local_opt'
+			else local pkgspec`speccounter'_`local_opt' : copy local `local_opt'
 		}
-		di `"`speccounter': `pkgspec`speccounter''"'
+		local pkgspec`speccounter'_pkglist : copy local pkglist
+		if (`: list pkgspec`speccounter'_saving in targetarchives'==1) {
+			local targetnum: list posof `"`pkgspec`speccounter'_saving'"' in targetarchives
+			local targetarchive`targetnum'_pkgspecs : list targetarchive`targetnum'_pkgspecs | speccounter
+		}
+		else {
+			local targetarchives : list targetarchives | pkgspec`speccounter'_saving
+			local targetarchive`++targetarchivecounter'_pkgspecs `speccounter'
+		}
 	}
-	/*
-	// create archive
-	_zipdir `"`tmppath'"' , `flat' `replace' `trackfile' `verbose' saving(`"`savename'"')
-	// clean up
-	_rm_dircontents `"`tmppath'"'
-	 rmdir `"`tmppath'"'
+	// create archives
+	*!TODO: implement option passthrough
+	*!TODO: implement status and error messages
+	forvalues num=1/`targetarchivecounter' {
+		// create temporary directory
+		_create_tempsubdir `"`c(tmpdir)'"'
+		local tmppath `r(tempdirfullpath)'
+		// target name
+		local savename : word `num' of `targetarchives'
+		// download stuff
+		foreach specnum of local targetarchive`num'_pkgspecs {
+			local install_cmd=cond(`"`pkgspec`specnum'_from'"'==`"SSC"',`"ssc"',`"net"')
+			foreach pkgname of local pkgspec`specnum'_pkglist {
+				sysdir set PLUS `"`tmppath'"'
+				capture : `install_cmd' install `pkgname' , `=cond(`"`pkgspec`specnum'_from'"'==`"SSC"',`""',`"from(`pkgspec`specnum'_from')"')'
+				sysdir set PLUS `"`oldplusdir'"'
+				if (_rc!=0) {
+					di as err `"package download failed, package `pkgname' will not be included in ZIP archive {it:`savename'}!"'
+				}
+			}
+		}
+		// create archive
+		_zipdir `"`tmppath'"' , `flat' `replace' `trackfile' `verbose' saving(`"`savename'"')
+		// clean up
+		_rm_dircontents `"`tmppath'"'
+		 rmdir `"`tmppath'"'
+	}
 	// exit
-	*/
 	exit 0
 end
 /* subroutine: create ZIP archive from a complete directory, descending by one level */
@@ -130,6 +179,7 @@ program define _rm_dircontents , rclass
 		foreach file of local subdirfiles {
 			rm `"`dirname'/`subdir'/`file'"'
 		}
+		rmdir `"`dirname'/`subdir'"'
 	}
 	local dirfiles : dir "`dirname'" files "*" , respectcase
 	foreach file of local dirfiles {
