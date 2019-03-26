@@ -1,0 +1,6 @@
+*.ado linguist-language=Stata
+*.sthlp linguist-language=Stata
+*.do linguist-language=Stata
+stata.toc linguist-language=Stata
+*.pkg linguist-language=Stata
+
