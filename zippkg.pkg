@@ -1,5 +1,5 @@
 v 3
-d 'zippkg': Stata module to create ZIP file(s) of community-contributed content for offline distribution
+d 'zippkg': Stata module to create ZIP archives of community-contributed content for offline distribution
 d
 d 'zippkg' is a Stata helper program to distribute community-contributed content
 d into offline environments (such as data centers / secure enclaves or any other
@@ -13,11 +13,18 @@ d This is the development version of the package. This means, it is possibly uns
 d or may contain errors. If you're looking for the latest stable version,
 d you should search SSC from within Stata.
 d
+d KW: ZIP
+d KW: archiving
+d KW: downloading
+d KW: packages
+d KW: ssc
+d KW: net
+d
 d Requires: Stata version 11 or newer
 d
-d Distribution-Date: 20190321
+d Distribution-Date: 20190326
 d
-d Authors: Daniel Bela
+d Author: Daniel Bela
 d Support: {browse "https://github.com/dirtyhawk/stata-zippkg"}
 f zippkg.ado
 f zippkg.sthlp

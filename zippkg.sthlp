@@ -1,10 +1,12 @@
 {smcl}
-{* *! version 0.1 21 March 2019}{...}
+{* *! version 1.0 26 March 2019}{...}
 {vieweralsosee "[R] net" "help net"}{...}
 {vieweralsosee "[R] ssc" "help ssc"}{...}
+{vieweralsosee "[D] checksum" "help checksum"}{...}
 {vieweralsosee "" "--"}{...}
 {vieweralsosee "[R] net" "mansection R net"}{...}
 {vieweralsosee "[R] ssc" "mansection R ssc"}{...}
+{vieweralsosee "[D] checksum" "mansection D checksum"}{...}
 {viewerjumpto "Syntax" "zippkg##syntax"}{...}
 {viewerjumpto "Description" "zippkg##description"}{...}
 {viewerjumpto "Options" "zippkg##options"}{...}
@@ -12,14 +14,14 @@
 {viewerjumpto "Examples" "zippkg##examples"}{...}
 {viewerjumpto "Author" "zippkg##author"}{...}
 {viewerjumpto "Also see" "zippkg##alsosee"}{...}
-help for {cmd:zippkg}{right:version 0.1 (21 March 2019)}
+help for {cmd:zippkg}{right:version 1.0 (26 March 2019)}
 {hline}
 
 
 {title:Title}
 
 {phang}
-{bf:zippkg} {hline 2} A Stata module to create ZIP file(s) of
+{bf:zippkg} {hline 2} A Stata module to create ZIP archives of
  community-contributed content for offline distribution{p_end}
 
 
@@ -60,7 +62,7 @@ help for {cmd:zippkg}{right:version 0.1 (21 March 2019)}
 {syntab:{cmd:zippkg} options}
 
 {synopt:{opt f:rom(directory_or_url)}} requests to use {it:directory_or_url} as
-installation source; the special keyword {input:"SSC"} is allowed (and used as
+installation source; the special keyword {input:"ssc"} is allowed (and used as
 default if the option is omitted), any other content will be passed through to
 {help net##options_net_install:net install}{p_end}
 {synopt:{opt all}}also download ancillary files; will be passed through to
@@ -77,13 +79,15 @@ requested, create a single archive file for each {it:pkglist}{p_end}
 {input:.zip} is assumed{p_end}
 {synopt:{opt replace}}replace the output archive file(s), if already
 present{p_end}
+{synopt:{opt checksum:s}}activate Stata's checksum mechanism before downloading
+files{p_end}
 {synopt:{opt v:erbose}}give verbose output{p_end}
 
 {marker pkgspecopts}{...}
 {syntab:{it:pgkspec} options}{...}
 
 {synopt:{opt f:rom(directory_or_url)}} requests to use {it:directory_or_url} as
-installation source; the special keyword {input:"SSC"} is allowed (and used as
+installation source; the special keyword {input:"ssc"} is allowed (and used as
 default if the option is omitted), any other content will be passed through to
 {help net##options_net_install:net install}{p_end}
 {synopt:{opt all}}also download ancillary files; will be passed through to
@@ -116,10 +120,10 @@ Downloading several packages from different sources is supported via a syntax
 mechanism similar to the one of {help graph twoway##remarks2:graph twoway}; both
 variants ({input:||}-separator notation and {input:()}-binding notation) are
 supported.{break}When using {cmd:zippkg} this way, some options are available as
-{it:"global"} options to {cmd:zippkg} only, while others are available as
-{it:pkgspec} options as well. See {help zippkg##options:section options} for a
-detailed description of the options, and an overview table showcasing option
-availibility.{p_end}
+{it:"global"} options to {cmd:zippkg} only, while others are available as in the
+scope of each {it:pkgspec} as well. See {help zippkg##options:section options}
+for a detailed description of the options, and an overview table showcasing
+option availibility.{p_end}
 
 
 {marker options}{...}
@@ -137,6 +141,7 @@ option{p_end}
 {pmore}flat{bind:             }yes{bind:                }yes{p_end}
 {pmore}replace{bind:          }yes{bind:                }yes{p_end}
 {pmore}single{bind:           }yes{bind:                }no{p_end}
+{pmore}checksums{bind:        }yes{bind:                }no{p_end}
 {pmore}verbose{bind:          }yes{bind:                }no{p_end}
 
 {phang}If an option is specified both as {cmd:zippkg} option and {it:pkgspec}
@@ -146,10 +151,10 @@ option, the {it:pkgspec} option always takes precedence.{p_end}
 
 {pstd} Options for downloading content:{p_end}
 
-{phang}{opt f:rom(directory_or_url)} requests to use {it:directory_or_url} as
+{phang}{opt from(directory_or_url)} requests to use {it:directory_or_url} as
 installation source for the packages in {it:pkglist}. It will be passed through
 to {help net##options_net_install:net install}, unless the special keyword
-{input:"SSC"} is specified.{break}The special keyword {input:"SSC"}, which is
+{input:"ssc"} is specified.{break}The special keyword {input:"ssc"}, which is
 the default if the option is omitted, makes {cmd:zippkg} use the command
 {help ssc:ssc install} for package installation instead of
 {help net:net install} in order to use the
@@ -160,8 +165,17 @@ the default if the option is omitted, makes {cmd:zippkg} use the command
 {opt all} requests to also download ancillary files (and include in the
 resulting archive file). It will be passed through to
 {help net##options_net_install:net install} or
-{help ssc##options_ssc_install:ssc} (if SSC is the installation source).
+{help ssc##options_ssc_install:ssc} (if SSC is the installation source).{break}
+Note that ancillary files that have been downloaded that way always are placed
+at the top-level directory of the created archive file, regardless of the option
+{opt flat}. This may induce errors in creating the archive file in case two
+packages ship ancillary files with the same name.{p_end}
 
+{phang}
+{opt checksums} requests to activate Stata's checksum (see
+{help checksum:help checksum}) mechanism before downloading files. When
+specified, {cmd:zippkg} will "{input:set checksum on}" before downloading files,
+and reset the setting afterwards.{p_end}
 
 {dlgtab:ZIP options}
 
@@ -193,14 +207,15 @@ directory of the archive(s).{p_end}
 with an error message.{p_end}
 
 {phang}{opt single} requests that single archive files will be created for each
-{it:pkglist} downloaded, instead of a joint archive file for all packages. Each of
-the single archive files will be named {input:zippkg{it:#}.zip}, and saved
+{it:pkglist} downloaded, instead of a joint archive file for all packages. Each
+of the single archive files will be named {input:zippkg{it:#}.zip}, and saved
 to Stata's current working directory. In the archive name, {it:#} denotes a
 running integer for the {it:pkglist}{break}This option literally is a shortcut
 to manually specifying {input:saving(zippkg{it:#}.zip)} in each {it:pkgspec}
-manually.{break}Options {opt single} and {opt saving(filename)} are mutually
-exclusive as {cmd:zippkg} options, with {opt single} taking precedence if both
-are specified.{p_end}
+manually.{break}Options {opt single} and {opt saving(filename)}, when specified
+as global {cmd:zippkg} options, are mutually exclusive, with {opt single} taking
+precedence if both are specified.{break}In the scope of {it:pkgspec} options,
+{opt saving} implies {opt single}.{p_end}
 
 {dlgtab:advanced}
 
@@ -210,6 +225,14 @@ desired to identify downloading problems.{p_end}
 
 {marker remarks}{...}
 {title:Remarks}
+
+{pstd}
+{cmd:zippkg} will reset the installation directories for {help net } to its
+factory defaults (i.e. it executes "{input:net set ado PLUS}" and
+"{input:net set other}" after downloading files). This may modify user settings,
+if the default paths have been changed. Please contact the author if you have a
+good idea on how to prevent this.
+{p_end}
 
 {pstd}
 The source code of the program is licensed under the
@@ -262,7 +285,8 @@ saving(cox_pkgs.zip)){reset}{p_end}
 
 {pstd}
 Daniel Bela ({browse "mailto:daniel.bela@lifbi.de":daniel.bela@lifbi.de}),
-Leibniz Institute for Educational Trajectories (LIfBi), Germany.
+Leibniz Institute for Educational Trajectories (LIfBi), Germany.{break}
+Support via {browse "https://github.com/dirtyhawk/stata-zippkg"}.
 {p_end}
 
 
@@ -270,5 +294,5 @@ Leibniz Institute for Educational Trajectories (LIfBi), Germany.
 {title:Also see}
 
 {psee}
-{help net}, {help ssc}
+{help net}, {help ssc}, {help checksum}
 {p_end}
