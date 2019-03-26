@@ -3,8 +3,9 @@ clear all
 run zippkg.ado
 cls
 
+
 // simple notation
-zippkg fre tr , replace notrackfile verbose flat
+zippkg fre tr , replace notrackfile verbose flat checksums saving(mypkgs.zip)
 
 // ()-binding notation , no global options , no pkgspec options
 zippkg (fre tr) (findname catplot) (elabel)
@@ -28,5 +29,4 @@ zippkg fre tr || findname catplot , saving(njc.zip) || sjlatex , from("https://w
 zippkg (fre tr) (findname catplot , saving(njc.zip)) (sjlatex , from("https://www.stata-journal.com/production")) , replace notrackfile verbose flat
 
 // ||-separator notation , with global options , with pkgspec options
-zippkg fre tr || findname catplot , saving(njc.zip) || sjlatex , from("https://www.stata-journal.com/production") || , replace notrackfile verbose flat
-
+zippkg fre tr || findname catplot , saving(njc.zip) all || sjlatex , from("https://www.stata-journal.com/production") || , replace notrackfile verbose flat
